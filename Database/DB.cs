@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 namespace Database
 {
-    //main database connection class
+    //main database connection class.
     public class DB : IDisposable
     {
         public static String asString(double val)
