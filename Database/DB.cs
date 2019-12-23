@@ -173,7 +173,7 @@ namespace Database
         {
             String query = "SELECT " + fieldList + " FROM " + fromString;
             if (filterString != null) query += " WHERE " + filterString;
-            if (orderString != null) query += " ORDERY BY " + orderString;
+            if (orderString != null) query += " ORDER BY " + orderString;
             selectStatements.Add(statementKey, query);
         }
 
@@ -210,7 +210,8 @@ namespace Database
                     Dictionary<String, Object> row = new Dictionary<String, Object>();
                     foreach (String field in fields)
                     {
-                        row[field] = dataReader[field];
+                        String f = field.Trim();
+                        row[f] = dataReader[f];
                     }
 
                     result.Add(row);
