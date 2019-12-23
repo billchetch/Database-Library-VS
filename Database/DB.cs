@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
 
-namespace Database
+namespace Chetch.Database
 {
     //main database connection class.
     public class DB : IDisposable
