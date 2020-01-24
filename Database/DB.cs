@@ -27,6 +27,32 @@ namespace Chetch.Database
         private Dictionary<String, String> deleteStatements = new Dictionary<String, String>();
         private Dictionary<String, String> selectStatements = new Dictionary<String, String>();
 
+        //Create from settings
+        static public DB Create(System.Configuration.ApplicationSettingsBase settings, String[] keys)
+        {
+            if (keys == null || keys.Length != 4) throw new Exception("Incorrect number of keys ... must be 4");
+
+            var server = (String)settings[keys[0]];
+            var database = (String)settings[keys[1]];
+            var uid = (String)settings[keys[2]];
+            var pwd = (String)settings[keys[3]];
+            var db = new DB(server, database, uid, pwd);
+            return db;
+        }
+
+        static public DB Create(System.Configuration.ApplicationSettingsBase settings)
+        {
+            var keys = new String[] { "DBServer", "DBName", "DBUsername", "DBPassword" };
+            return Create(settings, keys);
+        }
+
+        static public DB Create(System.Configuration.ApplicationSettingsBase settings, String dbnameKey)
+        {
+            var keys = new String[] { "DBServer", dbnameKey, "DBUsername", "DBPassword" };
+            return Create(settings, keys);
+        }
+
+
         //Constructor
         public DB(String server, String database, String uid, String password)
         {
