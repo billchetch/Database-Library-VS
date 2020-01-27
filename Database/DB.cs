@@ -27,44 +27,71 @@ namespace Chetch.Database
         private Dictionary<String, String> deleteStatements = new Dictionary<String, String>();
         private Dictionary<String, String> selectStatements = new Dictionary<String, String>();
 
-        //Create from settings
-        static public DB Create(System.Configuration.ApplicationSettingsBase settings, String[] keys)
+        
+        //static template factory method
+        static public D Create<D>(String server, String database, String uid, String password) where D : DB, new()
         {
-            if (keys == null || keys.Length != 4) throw new Exception("Incorrect number of keys ... must be 4");
-
-            var server = (String)settings[keys[0]];
-            var database = (String)settings[keys[1]];
-            var uid = (String)settings[keys[2]];
-            var pwd = (String)settings[keys[3]];
-            var db = new DB(server, database, uid, pwd);
+            var db = new D();
+            db.Configure(server, database, uid, password);
+            db.Initialize();
             return db;
         }
 
-        static public DB Create(System.Configuration.ApplicationSettingsBase settings)
+        static public D Create<D>(System.Configuration.ApplicationSettingsBase settings, String[] keys) where D : DB, new()
+        {
+            var db = new D();
+            db.Configure(settings, keys);
+            db.Initialize();
+            return db;
+        }
+
+        static public D Create<D>(System.Configuration.ApplicationSettingsBase settings) where D : DB, new()
         {
             var keys = new String[] { "DBServer", "DBName", "DBUsername", "DBPassword" };
-            return Create(settings, keys);
+            return Create<D>(settings, keys);
         }
 
-        static public DB Create(System.Configuration.ApplicationSettingsBase settings, String dbnameKey)
+        static public D Create<D>(System.Configuration.ApplicationSettingsBase settings, String dbnameKey) where D : DB, new()
         {
             var keys = new String[] { "DBServer", dbnameKey, "DBUsername", "DBPassword" };
-            return Create(settings, keys);
+            return Create<D>(settings, keys);
         }
 
-
         //Constructor
+        public DB()
+        {
+            //empty constructor for static template factory method
+        }
+       
         public DB(String server, String database, String uid, String password)
+        {
+            Configure(server, database, uid, password);
+            Initialize();
+        }
+
+        //config
+        public void Configure(String server, String database, String uid, String password)
         {
             this.server = server;
             this.database = database;
             this.uid = uid;
             this.password = password;
-            Initialize();
         }
 
-        //Initialize values
-        protected void Initialize()
+        public void Configure(System.Configuration.ApplicationSettingsBase settings, String[] keys)
+        {
+            if (keys == null || keys.Length != 4) throw new Exception("Incorrect number of keys ... must be 4");
+
+            var pwd = Chetch.Utilities.BasicEncryption.Decrypt((String)settings[keys[3]], "dbpasswd");
+            Configure((String)settings[keys[0]],
+                        (String)settings[keys[1]],
+                        (String)settings[keys[2]],
+                        pwd);
+        }
+
+
+        //Initialize values and connect
+        virtual public void Initialize()
         {
             String connectionString;
             connectionString = "SERVER=" + this.server + ";" + "DATABASE=" +
