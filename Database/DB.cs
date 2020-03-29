@@ -154,8 +154,12 @@ namespace Chetch.Database
             String statement = GetStatement(statements, statementKey);
             if (statement == null) throw new Exception(statementKey + " does not produce a statement");
 
-            values = Utilities.Format.AddSlashes(values);
-            statement = String.Format(statement, values);
+            //only if we have values...
+            if (values.Length > 0)
+            {
+                values = Utilities.Format.AddSlashes(values);
+                statement = String.Format(statement, values);
+            }
 
             MySqlCommand cmd;
             try
@@ -274,8 +278,11 @@ namespace Chetch.Database
             String statement = GetStatement(selectStatements, statementKey);
             if (statement == null) throw new Exception(statementKey + " does not produce a statement");
 
-            values = Utilities.Format.AddSlashes(values);
-            statement = String.Format(statement, values);
+            if (values.Length > 0)
+            {
+                values = Utilities.Format.AddSlashes(values);
+                statement = String.Format(statement, values);
+            }
             try
             {
                 //open connection
