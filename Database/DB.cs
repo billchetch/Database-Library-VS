@@ -195,10 +195,40 @@ namespace Chetch.Database
             AddUpdateStatement(table, table, paramString, filterString);
         }
 
+        protected String GenerateParamString(Dictionary<String, Object> vals)
+        {
+            String s = "";
+            foreach(var v in vals)
+            {
+                s += (s.Length > 0 ? ", " : "") + v.Key + "='" + v.Value + "'";
+            }
+            return s;
+        }
+
         //Update statement
         public void Update(String statementKey, params string[] values)
         {
             ExecuteWriteStatement(updateStatements, statementKey, values);
+        }
+
+        public void Update(String tableName, Dictionary<String, Object> vals, String filter)
+        {
+            Dictionary<String, String> temp = new Dictionary<string, string>();
+            String paramString = GenerateParamString(vals);
+            String statement = "UPDATE " + tableName + " SET " + paramString + " WHERE " + filter;
+            List<String> values = new List<String>();
+            foreach(var v in vals.Values)
+            { 
+                values.Add(v.ToString());
+            }
+            temp.Add(tableName, statement);
+            ExecuteWriteStatement(temp, tableName, values.ToArray());
+        }
+
+        public void Update(String tableName, Dictionary<String, Object> vals, long id, String idName = "id")
+        {
+            String filter = tableName + "." + idName + "=" + id;
+            Update(tableName, vals, filter);
         }
 
         //Delete statement
