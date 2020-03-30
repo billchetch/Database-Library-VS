@@ -25,7 +25,7 @@ namespace Chetch.Database
             T id;
             foreach(var r in rows)
             {
-                if (r[idName] is long)
+                if (r[idName] is long || r[idName] is System.UInt32 || r[idName] is int)
                 {
                     id = (T)(Object)System.Convert.ToInt64(r[idName]);
                 }
@@ -34,6 +34,7 @@ namespace Chetch.Database
                     id = (T)r[idName];
                 } else
                 {
+                    //TODO: deal with other types...
                     id = (T)r[idName];
                 }
                 if (idm.ContainsKey(id)) throw new Exception("Key is not unique");
