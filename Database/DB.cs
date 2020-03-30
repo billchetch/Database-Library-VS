@@ -41,11 +41,6 @@ namespace Chetch.Database
             }
             return idm;
         }
-
-        public static IDMap<T> Create(List<DBRow> rows, String tableName, String idName = "id")
-        {
-            return Create(rows, tableName + "." + idName);
-        }
     }
 
     //main database connection class.
