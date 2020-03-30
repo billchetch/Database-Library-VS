@@ -8,6 +8,37 @@ using MySql.Data.MySqlClient;
 
 namespace Chetch.Database
 {
+    public class DBRow : Dictionary<String, Object>
+    {
+
+    }
+
+    public class IDMap : Dictionary<long, DBRow>
+    {
+        public static IDMap Create(List<DBRow> rows, String idName = "id")
+        {
+            IDMap idm = new IDMap();
+            if(rows.Count > 0 && !rows[0].ContainsKey(idName))
+            {
+                throw new Exception("First row does not contain id key " + idName);
+            }
+            foreach(var r in rows)
+            {
+                long id = System.Convert.ToInt64(r[idName]);
+                if (idm.ContainsKey(id)) throw new Exception("Key is not unique");
+                idm[id] = r;
+            }
+            return idm;
+        }
+
+        public static IDMap Create(List<DBRow> rows, String tableName, String idName = "id")
+        {
+            return Create(rows, tableName + "." + idName);
+        }
+
+
+    }
+
     //main database connection class.
     public class DB : IDisposable
     {
@@ -57,6 +88,7 @@ namespace Chetch.Database
             return Create<D>(settings, keys);
         }
 
+        
         //Constructor
         public DB()
         {
@@ -271,9 +303,9 @@ namespace Chetch.Database
 
 
         //Select statement
-        public List<Dictionary<String, Object>> Select(String statementKey, String fieldList, params string[] values)
+        public List<DBRow> Select(String statementKey, String fieldList, params string[] values)
         {
-            List<Dictionary<String, Object>> result = new List<Dictionary<String, Object>>();
+            List<DBRow> result = new List<DBRow>();
 
             String statement = GetStatement(selectStatements, statementKey);
             if (statement == null) throw new Exception(statementKey + " does not produce a statement");
@@ -297,7 +329,7 @@ namespace Chetch.Database
                 //Read the data and store them in the list
                 while (dataReader.Read())
                 {
-                    Dictionary<String, Object> row = new Dictionary<String, Object>();
+                    DBRow row = new DBRow();
                     foreach (String field in fields)
                     {
                         String f = field.Trim();
@@ -318,9 +350,9 @@ namespace Chetch.Database
             return result;
         }
 
-        public Dictionary<String, Object> SelectRow(String statementKey, String fieldList, params string[] values)
+        public DBRow SelectRow(String statementKey, String fieldList, params string[] values)
         {
-            List<Dictionary<String, Object>> result = Select(statementKey, fieldList, values);
+            List<DBRow> result = Select(statementKey, fieldList, values);
             return result.Count == 0 ? null : result[0];
         }
 
