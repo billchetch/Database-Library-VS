@@ -13,30 +13,39 @@ namespace Chetch.Database
 
     }
 
-    public class IDMap : Dictionary<long, DBRow>
+    public class IDMap<T> : Dictionary<T, DBRow>
     {
-        public static IDMap Create(List<DBRow> rows, String idName = "id")
+        public static IDMap<T> Create(List<DBRow> rows, String idName = "id")
         {
-            IDMap idm = new IDMap();
+            IDMap<T> idm = new IDMap<T>();
             if(rows.Count > 0 && !rows[0].ContainsKey(idName))
             {
                 throw new Exception("First row does not contain id key " + idName);
             }
+            T id;
             foreach(var r in rows)
             {
-                long id = System.Convert.ToInt64(r[idName]);
+                if (r[idName] is long)
+                {
+                    id = (T)(Object)System.Convert.ToInt64(r[idName]);
+                }
+                else if (r[idName] is String)
+                {
+                    id = (T)r[idName];
+                } else
+                {
+                    id = (T)r[idName];
+                }
                 if (idm.ContainsKey(id)) throw new Exception("Key is not unique");
                 idm[id] = r;
             }
             return idm;
         }
 
-        public static IDMap Create(List<DBRow> rows, String tableName, String idName = "id")
+        public static IDMap<T> Create(List<DBRow> rows, String tableName, String idName = "id")
         {
             return Create(rows, tableName + "." + idName);
         }
-
-
     }
 
     //main database connection class.
