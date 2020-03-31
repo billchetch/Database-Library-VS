@@ -194,6 +194,7 @@ namespace Chetch.Database
             //only if we have values...
             if (values.Length > 0)
             {
+                //TODO: trim whitespace from values
                 values = Utilities.Format.AddSlashes(values);
                 statement = String.Format(statement, values);
             }
