@@ -10,7 +10,23 @@ namespace Chetch.Database
 {
     public class DBRow : Dictionary<String, Object>
     {
+        public long ID { get; set; } = 0;
+        public String IDFieldName { get; set; } = "id";
 
+        virtual public void AddField(String fieldName, Object fieldValue)
+        {
+            this[fieldName] = fieldValue;
+            if(fieldName.Equals(IDFieldName, StringComparison.Ordinal))
+            {
+                try
+                {
+                    ID = System.Convert.ToInt64(fieldValue);
+                } catch (Exception)
+                {
+                    //allow to pass through
+                }
+            }
+        }
     }
 
     public class IDMap<T> : Dictionary<T, DBRow>
@@ -190,6 +206,12 @@ namespace Chetch.Database
         {
             String statement = GetStatement(statements, statementKey);
             if (statement == null) throw new Exception(statementKey + " does not produce a statement");
+            return ExecuteWriteStatement(statement, values);
+        }
+
+        private MySqlCommand ExecuteWriteStatement(String statement, params string[] values)
+        {
+            if (statement == null) throw new Exception("No statement provied");
 
             //only if we have values...
             if (values.Length > 0)
@@ -219,10 +241,29 @@ namespace Chetch.Database
             return cmd;
         }
 
+        protected String GenerateParamString(Dictionary<String, Object> vals)
+        {
+            String s = "";
+            foreach (var v in vals)
+            {
+                s += (s.Length > 0 ? ", " : "") + v.Key + "='" + v.Value + "'";
+            }
+            return s;
+        }
+
         //Insert statement
         public long Insert(String statementKey, params string[] values)
         {
             MySqlCommand cmd = ExecuteWriteStatement(insertStatements, statementKey, values);
+            return cmd.LastInsertedId;
+        }
+
+        public long Insert(String tableName, Dictionary<String, Object> vals)
+        {
+            Dictionary<String, String> temp = new Dictionary<string, string>();
+            String paramString = GenerateParamString(vals);
+            String statement = "INSERT INTO " + tableName + " SET " + paramString;
+            MySqlCommand cmd = ExecuteWriteStatement(statement);
             return cmd.LastInsertedId;
         }
 
@@ -237,16 +278,6 @@ namespace Chetch.Database
             AddUpdateStatement(table, table, paramString, filterString);
         }
 
-        protected String GenerateParamString(Dictionary<String, Object> vals)
-        {
-            String s = "";
-            foreach(var v in vals)
-            {
-                s += (s.Length > 0 ? ", " : "") + v.Key + "='" + v.Value + "'";
-            }
-            return s;
-        }
-
         //Update statement
         public void Update(String statementKey, params string[] values)
         {
@@ -258,13 +289,7 @@ namespace Chetch.Database
             Dictionary<String, String> temp = new Dictionary<string, string>();
             String paramString = GenerateParamString(vals);
             String statement = "UPDATE " + tableName + " SET " + paramString + " WHERE " + filter;
-            List<String> values = new List<String>();
-            foreach(var v in vals.Values)
-            { 
-                values.Add(v.ToString());
-            }
-            temp.Add(tableName, statement);
-            ExecuteWriteStatement(temp, tableName, values.ToArray());
+            ExecuteWriteStatement(statement);
         }
 
         public void Update(String tableName, Dictionary<String, Object> vals, long id, String idName = "id")
@@ -336,10 +361,12 @@ namespace Chetch.Database
                 while (dataReader.Read())
                 {
                     DBRow row = new DBRow();
+
                     foreach (String field in fields)
                     {
                         String f = field.Trim();
-                        row[f] = dataReader[f];
+                        //row[f] = dataReader[f];
+                        row.AddField(f, dataReader[f]);
                     }
 
                     result.Add(row);
