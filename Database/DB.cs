@@ -29,6 +29,42 @@ namespace Chetch.Database
         }
     }
 
+    public class LogEntry : DBRow
+    {
+        public enum LogEntryType
+        {
+            INFO,
+            WARNING,
+            ERROR
+        }
+        public DateTime Created { get; internal set; }
+        public String LogName { get; internal set; }
+        public LogEntryType LogType { get; internal set; }
+        public String Entry { get; internal set; }
+
+
+        override public void AddField(String fieldName, Object fieldValue)
+        {
+            base.AddField(fieldName, fieldValue);
+
+            switch (fieldName)
+            {
+                case "created":
+                    //TODO: parse in to date object
+                    break;
+                case "LogName":
+                    LogName = (String)fieldValue;
+                    break;
+                case "log_entry_type":
+                    LogType = (LogEntryType)Enum.Parse(typeof(LogEntryType), (String)fieldValue);
+                    break;
+                case "log_entry":
+                    Entry = (String)fieldName;
+                    break;
+            }
+        }
+    }
+
     public class IDMap<T> : Dictionary<T, DBRow>
     {
         public static IDMap<T> Create(List<DBRow> rows, String idName = "id")
@@ -79,7 +115,8 @@ namespace Chetch.Database
         private Dictionary<String, String> deleteStatements = new Dictionary<String, String>();
         private Dictionary<String, String> selectStatements = new Dictionary<String, String>();
 
-        
+        public String LogTableName { get; internal set; } = "sys_logs";
+
         //static template factory method
         static public D Create<D>(String server, String database, String uid, String password) where D : DB, new()
         {
@@ -109,13 +146,13 @@ namespace Chetch.Database
             return Create<D>(settings, keys);
         }
 
-        
+
         //Constructor
         public DB()
         {
             //empty constructor for static template factory method
         }
-       
+
         public DB(String server, String database, String uid, String password)
         {
             Configure(server, database, uid, password);
@@ -151,6 +188,15 @@ namespace Chetch.Database
             this.database + ";" + "UID=" + this.uid + ";" + "PASSWORD=" + password + ";SslMode=none";
 
             connection = new MySqlConnection(connectionString);
+
+            //include logging
+            if (LogTableName != null)
+            {
+                AddSelectStatement(LogTableName + "All", "*", LogTableName, null, "created DESC", "{0}");
+                AddSelectStatement(LogTableName, "*", "log_name='{0}'", "created DESC", "{1}");
+
+                AddInsertStatement(LogTableName, "log_name='{0}', log_entry_type='{1}', log_entry='{2}'");
+            }
         }
 
         public void Dispose(bool disposing)
@@ -319,24 +365,31 @@ namespace Chetch.Database
             ExecuteWriteStatement(deleteStatements, statementKey, values);
         }
 
-        public void AddSelectStatement(String statementKey, String fieldList, String fromString, String filterString, String orderString)
+        public void AddSelectStatement(String statementKey, String fieldList, String fromString, String filterString, String orderString, String limitString = null)
         {
             String query = "SELECT " + fieldList + " FROM " + fromString;
             if (filterString != null) query += " WHERE " + filterString;
             if (orderString != null) query += " ORDER BY " + orderString;
+            if (limitString != null) query += " LIMIT " + limitString;
             selectStatements.Add(statementKey, query);
         }
 
-        public void AddSelectStatement(String table, String fieldList, String filterString, String orderString)
+        public void AddSelectStatement(String table, String fieldList, String filterString, String orderString, String limitString = null)
         {
-            AddSelectStatement(table, fieldList, table, filterString, orderString);
+            AddSelectStatement(table, fieldList, table, filterString, orderString, limitString);
         }
 
 
         //Select statement
+
         public List<DBRow> Select(String statementKey, String fieldList, params string[] values)
         {
-            List<DBRow> result = new List<DBRow>();
+            return Select<DBRow>(statementKey, fieldList, values);
+        }
+
+        public List<T> Select<T>(String statementKey, String fieldList, params string[] values) where T : DBRow, new()
+        {
+            List<T> result = new List<T>();
 
             String statement = GetStatement(selectStatements, statementKey);
             if (statement == null) throw new Exception(statementKey + " does not produce a statement");
@@ -360,12 +413,11 @@ namespace Chetch.Database
                 //Read the data and store them in the list
                 while (dataReader.Read())
                 {
-                    DBRow row = new DBRow();
+                    T row = new T();
 
                     foreach (String field in fields)
                     {
                         String f = field.Trim();
-                        //row[f] = dataReader[f];
                         row.AddField(f, dataReader[f]);
                     }
 
@@ -383,10 +435,15 @@ namespace Chetch.Database
             return result;
         }
 
+        public T SelectRow<T>(String statementKey, String fieldList, params string[] values) where T : DBRow, new()
+        {
+            List<T> result = Select<T>(statementKey, fieldList, values);
+            return result.Count == 0 ? null : result[0];
+        }
+
         public DBRow SelectRow(String statementKey, String fieldList, params string[] values)
         {
-            List<DBRow> result = Select(statementKey, fieldList, values);
-            return result.Count == 0 ? null : result[0];
+            return SelectRow<DBRow>(statementKey, fieldList, values);
         }
 
         //Count statement
@@ -424,5 +481,27 @@ namespace Chetch.Database
         public void Restore()
         {
         }*/
+
+        //General methods for things such as logging or sys info
+
+        public List<LogEntry> GetLogEntries(String logName = null, int numberOfRows = 100)
+        {
+            if (logName == null) {
+                return Select<LogEntry>(LogTableName + "All", "id,created,log_entry_type,log_entry", numberOfRows.ToString());
+            } else
+            {
+                return Select<LogEntry>(LogTableName, "id,created,log_entry_type,log_entry", logName, numberOfRows.ToString());
+            }
+        }
+
+        public long Log(String logName, LogEntry.LogEntryType type, String entry)
+        {
+            return Insert(LogTableName, logName, type.ToString(), entry);
+        }
+           
+        public long LogInfo(String logName, String entry)
+        {
+            return Log(logName, LogEntry.LogEntryType.INFO, entry);
+        }
     }
 }
