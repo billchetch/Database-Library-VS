@@ -110,6 +110,9 @@ namespace Chetch.Database
         private String uid;
         private String password;
 
+        public String DBName { get { return database; } }
+        public String DBServer { get { return server;  } }
+
         private Dictionary<String, String> insertStatements = new Dictionary<String, String>();
         private Dictionary<String, String> updateStatements = new Dictionary<String, String>();
         private Dictionary<String, String> deleteStatements = new Dictionary<String, String>();
@@ -131,6 +134,14 @@ namespace Chetch.Database
             var db = new D();
             db.Configure(settings, keys);
             db.Initialize();
+            try
+            {
+                db.OpenConnection();
+            }
+            finally
+            {
+                db.CloseConnection();
+            }
             return db;
         }
 
@@ -188,7 +199,7 @@ namespace Chetch.Database
             this.database + ";" + "UID=" + this.uid + ";" + "PASSWORD=" + password + ";SslMode=none";
 
             connection = new MySqlConnection(connectionString);
-
+            
             //include logging
             if (LogTableName != null)
             {
@@ -365,7 +376,7 @@ namespace Chetch.Database
             ExecuteWriteStatement(deleteStatements, statementKey, values);
         }
 
-        public void AddSelectStatement(String statementKey, String fieldList, String fromString, String filterString, String orderString, String limitString = null)
+        public void AddSelectStatement(String statementKey, String fieldList, String fromString, String filterString, String orderString, String limitString)
         {
             String query = "SELECT " + fieldList + " FROM " + fromString;
             if (filterString != null) query += " WHERE " + filterString;
@@ -374,7 +385,7 @@ namespace Chetch.Database
             selectStatements.Add(statementKey, query);
         }
 
-        public void AddSelectStatement(String table, String fieldList, String filterString, String orderString, String limitString = null)
+        public void AddSelectStatement(String table, String fieldList, String filterString, String orderString, String limitString)
         {
             AddSelectStatement(table, fieldList, table, filterString, orderString, limitString);
         }
