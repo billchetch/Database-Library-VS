@@ -8,7 +8,7 @@ using MySql.Data.MySqlClient;
 
 namespace Chetch.Database
 {
-    public class DBRow : Dictionary<String, Object>
+    public class DBRow : Dictionary<String, Object>, IDBRow
     {
         public long ID { get; set; } = 0;
         public String IDFieldName { get; set; } = "id";
@@ -62,6 +62,66 @@ namespace Chetch.Database
                     Entry = (String)fieldName;
                     break;
             }
+        }
+    }
+
+    public class SysInfo : DBRow
+    {
+        private static System.Web.Script.Serialization.JavaScriptSerializer JSON_SERIALIZER = new System.Web.Script.Serialization.JavaScriptSerializer();
+
+        public DateTime Updated { get; internal set; }
+        public String DataName
+        {
+            get
+            {
+                return this.ContainsKey("data_name") ? this["data_name"].ToString() : null;
+            }
+
+            set
+            {
+                this["data_name"] = value;
+            }
+        }
+        public Dictionary<String, Object> DataValue { get; internal set; } = null;
+
+        override public void AddField(String fieldName, Object fieldValue)
+        {
+            base.AddField(fieldName, fieldValue);
+
+            switch (fieldName)
+            {
+                case "data_value":
+                    if (fieldValue != null)
+                    {
+                        DataValue = JSON_SERIALIZER.Deserialize<Dictionary<String, Object>>(fieldValue.ToString());
+                    }
+                    break;
+
+                case "updated":
+                    //TODO: parse in to date object
+
+
+                    Remove("updated"); // to avoid being saved back to the database
+                    break;
+            }
+        }
+
+
+
+        public Object GetValue(String key)
+        {
+            return DataValue.ContainsKey(key) ? DataValue[key] : null;
+        }
+
+        public void SetValue(String key, Object val)
+        {
+            if (DataValue == null)
+            {
+                DataValue = new Dictionary<String, Object>();
+            }
+            DataValue[key] = val;
+
+            this["data_value"] = JSON_SERIALIZER.Serialize(DataValue);
         }
     }
 
@@ -119,6 +179,7 @@ namespace Chetch.Database
         private Dictionary<String, String> selectStatements = new Dictionary<String, String>();
 
         public String LogTableName { get; internal set; } = "sys_logs";
+        public String SysInfoTableName { get; internal set; } = "sys_info";
 
         //static template factory method
         static public D Create<D>(String server, String database, String uid, String password) where D : DB, new()
@@ -207,6 +268,11 @@ namespace Chetch.Database
                 AddSelectStatement(LogTableName, "*", "log_name='{0}'", "created DESC", "{1}");
 
                 AddInsertStatement(LogTableName, "log_name='{0}', log_entry_type='{1}', log_entry='{2}'");
+            }
+
+            if(SysInfoTableName != null)
+            {
+                AddSelectStatement(SysInfoTableName, "*", "data_name='{0}'", null, "1");
             }
         }
 
@@ -317,7 +383,6 @@ namespace Chetch.Database
 
         public long Insert(String tableName, Dictionary<String, Object> vals)
         {
-            Dictionary<String, String> temp = new Dictionary<string, string>();
             String paramString = GenerateParamString(vals);
             String statement = "INSERT INTO " + tableName + " SET " + paramString;
             MySqlCommand cmd = ExecuteWriteStatement(statement);
@@ -343,7 +408,6 @@ namespace Chetch.Database
 
         public void Update(String tableName, Dictionary<String, Object> vals, String filter)
         {
-            Dictionary<String, String> temp = new Dictionary<string, string>();
             String paramString = GenerateParamString(vals);
             String statement = "UPDATE " + tableName + " SET " + paramString + " WHERE " + filter;
             ExecuteWriteStatement(statement);
@@ -353,6 +417,18 @@ namespace Chetch.Database
         {
             String filter = tableName + "." + idName + "=" + id;
             Update(tableName, vals, filter);
+        }
+
+        public long Write(String tableName, DBRow row)
+        {
+            if(row.ID == 0)
+            {
+                row.ID = Insert(tableName, row);
+            } else
+            {
+                Update(tableName, row, row.ID);
+            }
+            return row.ID;
         }
 
         //Delete statement
@@ -376,6 +452,14 @@ namespace Chetch.Database
             ExecuteWriteStatement(deleteStatements, statementKey, values);
         }
 
+        public void Delete(String tableName, long id, String idName = "id")
+        {
+            String statement = "DELETE FROM " + tableName + "WHERE " + tableName + "." + idName + "=" + id;
+            ExecuteWriteStatement(statement);
+        }
+
+
+        //select statements
         public void AddSelectStatement(String statementKey, String fieldList, String fromString, String filterString, String orderString, String limitString)
         {
             String query = "SELECT " + fieldList + " FROM " + fromString;
@@ -389,16 +473,14 @@ namespace Chetch.Database
         {
             AddSelectStatement(table, fieldList, table, filterString, orderString, limitString);
         }
-
-
-        //Select statement
-
+        
+        //Select actions
         public List<DBRow> Select(String statementKey, String fieldList, params string[] values)
         {
             return Select<DBRow>(statementKey, fieldList, values);
         }
 
-        public List<T> Select<T>(String statementKey, String fieldList, params string[] values) where T : DBRow, new()
+        public List<T> Select<T>(String statementKey, String fieldList, params string[] values) where T : IDBRow, new()
         {
             List<T> result = new List<T>();
 
@@ -419,17 +501,27 @@ namespace Chetch.Database
                 //Create a data reader and Execute the command
                 MySqlDataReader dataReader = cmd.ExecuteReader();
 
-                String[] fields = fieldList.Split(',');
+                String[] fields = fieldList == null || fieldList == "*" ? null : fieldList.Split(',');
 
                 //Read the data and store them in the list
                 while (dataReader.Read())
                 {
                     T row = new T();
 
-                    foreach (String field in fields)
+                    if (fields == null)
                     {
-                        String f = field.Trim();
-                        row.AddField(f, dataReader[f]);
+                        for(int i = 0; i <  dataReader.FieldCount; i++)
+                        {
+                            row.AddField(dataReader.GetName(i), dataReader.GetValue(i));
+                        }
+                    }
+                    else
+                    {
+                        foreach (String field in fields)
+                        {
+                            String f = field.Trim();
+                            row.AddField(f, dataReader[f]);
+                        }
                     }
 
                     result.Add(row);
@@ -446,10 +538,10 @@ namespace Chetch.Database
             return result;
         }
 
-        public T SelectRow<T>(String statementKey, String fieldList, params string[] values) where T : DBRow, new()
+        public T SelectRow<T>(String statementKey, String fieldList, params string[] values) where T : IDBRow, new()
         {
             List<T> result = Select<T>(statementKey, fieldList, values);
-            return result.Count == 0 ? null : result[0];
+            return result.Count == 0 ? default(T) : result[0];
         }
 
         public DBRow SelectRow(String statementKey, String fieldList, params string[] values)
@@ -494,7 +586,6 @@ namespace Chetch.Database
         }*/
 
         //General methods for things such as logging or sys info
-
         public List<LogEntry> GetLogEntries(String logName = null, int numberOfRows = 100)
         {
             if (logName == null) {
@@ -513,6 +604,51 @@ namespace Chetch.Database
         public long LogInfo(String logName, String entry)
         {
             return Log(logName, LogEntry.LogEntryType.INFO, entry);
+        }
+
+        public void SaveSysInfo(SysInfo sysInfo)
+        {
+            if (sysInfo.DataName == null)
+            {
+                throw new Exception("Cannot save sysInfo without a data name");
+            }
+            String filter = "data_name='" + sysInfo.DataName + "'";
+            if (Count(SysInfoTableName, filter) == 0)
+            {
+                Insert(SysInfoTableName, sysInfo);
+            }
+            else
+            {
+                Update(SysInfoTableName, sysInfo, filter);
+            }
+        }
+
+        public SysInfo GetSysInfo(String dataName)
+        {
+            SysInfo si = SelectRow<SysInfo>(SysInfoTableName, "*", dataName);
+            return si;
+        }
+
+        public void SaveSysInfo(String dataName, String fieldName, Object value)
+        {
+            SysInfo si = GetSysInfo(dataName);
+            if (si == null)
+            {
+                si = new SysInfo();
+                si.DataName = dataName;
+            }
+
+            si.SetValue(fieldName, value);
+            SaveSysInfo(si);
+        }
+
+        public void DeleteSysInfo(String dataName)
+        {
+            SysInfo si = GetSysInfo(dataName);
+            if (si != null)
+            {
+                Delete(SysInfoTableName, si.ID);
+            }
         }
     }
 }
