@@ -15,7 +15,6 @@ namespace Chetch.Database
 
         virtual public void AddField(String fieldName, Object fieldValue)
         {
-            this[fieldName] = fieldValue;
             if(fieldName.Equals(IDFieldName, StringComparison.Ordinal))
             {
                 try
@@ -25,7 +24,25 @@ namespace Chetch.Database
                 {
                     //allow to pass through
                 }
+            } else
+            {
+                this[fieldName] = fieldValue;
             }
+        }
+
+        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv)
+        {
+            return kv.Key + "='" + kv.Value + "'";
+        }
+
+        virtual public String GenerateParamString()
+        {
+            String s = "";
+            foreach (var v in this)
+            {
+                s += (s.Length > 0 ? ", " : "") + GenerateParamString(v);
+            }
+            return s;
         }
     }
 
@@ -159,9 +176,17 @@ namespace Chetch.Database
     //main database connection class.
     public class DB : IDisposable
     {
+        const String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+        const String DATE_FORMAT = "yyyy-MM-dd";
+
         public static String asString(double val)
         {
             return val.ToString(CultureInfo.InvariantCulture);
+        }
+
+        public static String asString(DateTime dt, String format = DATE_TIME_FORMAT)
+        {
+            return dt.ToUniversalTime().ToString(format);
         }
 
         private MySqlConnection connection;
@@ -389,6 +414,14 @@ namespace Chetch.Database
             return cmd.LastInsertedId;
         }
 
+        public long Insert(String tableName, DBRow row)
+        {
+            String paramString = row.GenerateParamString();
+            String statement = "INSERT INTO " + tableName + " SET " + paramString;
+            MySqlCommand cmd = ExecuteWriteStatement(statement);
+            return cmd.LastInsertedId;
+        }
+
         public void AddUpdateStatement(String statementKey, String table, String paramString, String filterString)
         {
             String query = "UPDATE " + table + " SET " + paramString + " WHERE " + filterString;
@@ -417,6 +450,19 @@ namespace Chetch.Database
         {
             String filter = tableName + "." + idName + "=" + id;
             Update(tableName, vals, filter);
+        }
+
+        public void Update(String tableName, DBRow row, String filter)
+        {
+            String paramString = row.GenerateParamString();
+            String statement = "UPDATE " + tableName + " SET " + paramString + " WHERE " + filter;
+            ExecuteWriteStatement(statement);
+        }
+
+        public void Update(String tableName, DBRow row, long id, String idName = "id")
+        {
+            String filter = tableName + "." + idName + "=" + id;
+            Update(tableName, row, filter);
         }
 
         public long Write(String tableName, DBRow row)
