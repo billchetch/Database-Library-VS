@@ -45,15 +45,21 @@ namespace Chetch.Database
             return s;
         }
 
+
+        public bool IsNull(String fieldName)
+        {
+            return this[fieldName] == System.DBNull.Value;
+        }
+
         public Object GetValue(String fieldName)
         {
-            if (!ContainsKey(fieldName) || this[fieldName] == System.DBNull.Value) return null;
+            if (IsNull(fieldName)) return null;
             return this[fieldName];
         }
 
         public T GetValue<T>(String fieldName, T defaultValue = default(T))
         {
-            if (!ContainsKey(fieldName) || this[fieldName] == System.DBNull.Value) return defaultValue;
+            if (IsNull(fieldName)) return defaultValue;
             return (T)this[fieldName];
         }
 
