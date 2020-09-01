@@ -44,6 +44,34 @@ namespace Chetch.Database
             }
             return s;
         }
+
+        public Object GetValue(String fieldName)
+        {
+            if (!ContainsKey(fieldName) || this[fieldName] == System.DBNull.Value) return null;
+            return this[fieldName];
+        }
+
+        public T GetValue<T>(String fieldName, T defaultValue = default(T))
+        {
+            if (!ContainsKey(fieldName) || this[fieldName] == System.DBNull.Value) return defaultValue;
+            return (T)this[fieldName];
+        }
+
+        public String GetString(String fieldName)
+        {
+            return GetValue<String>(fieldName);
+        }
+
+        public int GetInt(String fieldName, int defaultValue = 0)
+        {
+            return GetValue<int>(fieldName, defaultValue);
+        }
+
+        public bool GetAsBool(String fieldName)
+        {
+            int i =  GetValue<int>(fieldName, 0);
+            return i > 0;
+        }
     }
 
     public class LogEntry : DBRow
