@@ -30,17 +30,25 @@ namespace Chetch.Database
             }
         }
 
-        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv)
+        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv, bool asLiterals = false)
         {
-            return kv.Key + "='" + kv.Value + "'";
+            String r = null;
+            if (asLiterals)
+            {
+                r = String.Format("{0}={1}", kv.Key, kv.Value);
+            } else
+            {
+                r = String.Format("{0}='{1}'", kv.Key, kv.Value);
+            }
+            return r;
         }
 
-        virtual public String GenerateParamString()
+        virtual public String GenerateParamString(bool asLiterals = false)
         {
             String s = "";
             foreach (var v in this)
             {
-                s += (s.Length > 0 ? ", " : "") + GenerateParamString(v);
+                s += (s.Length > 0 ? ", " : "") + GenerateParamString(v, asLiterals);
             }
             return s;
         }
