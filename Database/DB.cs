@@ -175,8 +175,6 @@ namespace Chetch.Database
             }
         }
 
-
-
         public Object GetValue(String key)
         {
             return DataValue.ContainsKey(key) ? DataValue[key] : null;
