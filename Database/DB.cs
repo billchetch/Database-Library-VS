@@ -96,6 +96,14 @@ namespace Chetch.Database
             int i =  GetValue<int>(fieldName, 0);
             return i > 0;
         }
+
+        public DateTime GetDateTime(String fieldName, DateTimeKind kind = DateTimeKind.Local)
+        {
+            DateTime dt = GetValue<DateTime>(fieldName, default(DateTime));
+            DateTime.SpecifyKind(dt, kind);
+            return dt;
+        }
+        
     }
 
     public class LogEntry : DBRow
