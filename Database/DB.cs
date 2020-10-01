@@ -97,13 +97,12 @@ namespace Chetch.Database
             return i > 0;
         }
 
+        //returns date time object of a certain 'kind'
         public DateTime GetDateTime(String fieldName, DateTimeKind kind = DateTimeKind.Local)
         {
             DateTime dt = GetValue<DateTime>(fieldName, default(DateTime));
-            DateTime.SpecifyKind(dt, kind);
-            return dt;
+            return DateTime.SpecifyKind(dt, kind);
         }
-        
     }
 
     public class LogEntry : DBRow
