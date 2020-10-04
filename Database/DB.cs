@@ -81,6 +81,11 @@ namespace Chetch.Database
             return GetValue<int>(fieldName, defaultValue);
         }
 
+        public uint GetUInt(String fieldName, uint defaultValue = 0)
+        {
+            return GetValue<uint>(fieldName, defaultValue);
+        }
+
         public long GetLong(String fieldName, long defaultValue = 0)
         {
             return GetValue<long>(fieldName, defaultValue);
