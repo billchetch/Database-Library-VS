@@ -38,7 +38,8 @@ namespace Chetch.Database
                 r = String.Format("{0}={1}", kv.Key, kv.Value);
             } else
             {
-                r = String.Format("{0}='{1}'", kv.Key, kv.Value);
+                String value = kv.Value == null ? null : Utilities.Format.AddSlashes(kv.Value.ToString());
+                r = String.Format("{0}='{1}'", kv.Key, value);
             }
             return r;
         }
@@ -455,7 +456,8 @@ namespace Chetch.Database
             String s = "";
             foreach (var v in vals)
             {
-                s += (s.Length > 0 ? ", " : "") + v.Key + "='" + v.Value + "'";
+                String value = v.Value == null ? null : Utilities.Format.AddSlashes(v.Value.ToString());
+                s += (s.Length > 0 ? ", " : "") + v.Key + "='" + value + "'";
             }
             return s;
         }
