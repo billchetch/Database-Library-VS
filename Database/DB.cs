@@ -38,7 +38,8 @@ namespace Chetch.Database
                 r = String.Format("{0}={1}", kv.Key, kv.Value);
             } else
             {
-                r = String.Format("{0}='{1}'", kv.Key, kv.Value);
+                String value = kv.Value == null ? null : Utilities.Format.AddSlashes(kv.Value.ToString());
+                r = String.Format("{0}='{1}'", kv.Key, value);
             }
             return r;
         }
