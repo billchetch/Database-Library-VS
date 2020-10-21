@@ -52,8 +52,7 @@ namespace Chetch.Database
             }
             return s;
         }
-
-
+        
         public bool IsNull(String fieldName)
         {
             return this[fieldName] == System.DBNull.Value;
