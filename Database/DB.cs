@@ -379,7 +379,10 @@ namespace Chetch.Database
         //open connection to database
         private void OpenConnection()
         {
-            connection.Open();
+            if (connection.State != System.Data.ConnectionState.Open)
+            {
+                connection.Open();
+            }
         }
 
         //Close connection
