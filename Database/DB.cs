@@ -305,6 +305,7 @@ namespace Chetch.Database
             return Create<D>(settings, keys);
         }
 
+        private Object _readWriteLock = new Object();
 
         //Constructor
         public DB()
@@ -434,23 +435,26 @@ namespace Chetch.Database
                 statement = String.Format(statement, values);
             }
 
+
             MySqlCommand cmd;
-            try
+            lock (_readWriteLock)
             {
-                //open connection
-                OpenConnection();
+                try
+                {
+                    //open connection
+                    OpenConnection();
 
-                //create command and assign the query and connection from the constructor
-                cmd = new MySqlCommand(statement, connection);
+                    //create command and assign the query and connection from the constructor
+                    cmd = new MySqlCommand(statement, connection);
 
-                //Execute command
-                cmd.ExecuteNonQuery();
+                    //Execute command
+                    cmd.ExecuteNonQuery();
+                }
+                finally
+                {
+                    CloseConnection();
+                }
             }
-            finally
-            {
-                CloseConnection();
-            }
-
             return cmd;
         }
 
@@ -604,47 +608,52 @@ namespace Chetch.Database
                 values = Utilities.Format.AddSlashes(values);
                 statement = String.Format(statement, values);
             }
-            try
+
+            lock (_readWriteLock)
             {
-                //open connection
-                OpenConnection();
 
-                MySqlCommand cmd = new MySqlCommand(statement, connection);
-                //Create a data reader and Execute the command
-                MySqlDataReader dataReader = cmd.ExecuteReader();
-
-                String[] fields = fieldList == null || fieldList == "*" ? null : fieldList.Split(',');
-
-                //Read the data and store them in the list
-                while (dataReader.Read())
+                try
                 {
-                    T row = new T();
+                    //open connection
+                    OpenConnection();
 
-                    if (fields == null)
+                    MySqlCommand cmd = new MySqlCommand(statement, connection);
+                    //Create a data reader and Execute the command
+                    MySqlDataReader dataReader = cmd.ExecuteReader();
+
+                    String[] fields = fieldList == null || fieldList == "*" ? null : fieldList.Split(',');
+
+                    //Read the data and store them in the list
+                    while (dataReader.Read())
                     {
-                        for(int i = 0; i <  dataReader.FieldCount; i++)
+                        T row = new T();
+
+                        if (fields == null)
                         {
-                            row.AddField(dataReader.GetName(i), dataReader.GetValue(i));
+                            for (int i = 0; i < dataReader.FieldCount; i++)
+                            {
+                                row.AddField(dataReader.GetName(i), dataReader.GetValue(i));
+                            }
                         }
-                    }
-                    else
-                    {
-                        foreach (String field in fields)
+                        else
                         {
-                            String f = field.Trim();
-                            row.AddField(f, dataReader[f]);
+                            foreach (String field in fields)
+                            {
+                                String f = field.Trim();
+                                row.AddField(f, dataReader[f]);
+                            }
                         }
+
+                        result.Add(row);
                     }
 
-                    result.Add(row);
+                    //close Data Reader
+                    dataReader.Close();
                 }
-
-                //close Data Reader
-                dataReader.Close();
-            }
-            finally
-            {
-                CloseConnection();
+                finally
+                {
+                    CloseConnection();
+                }
             }
 
             return result;
