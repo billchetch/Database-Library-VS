@@ -265,6 +265,8 @@ namespace Chetch.Database
         private Dictionary<String, String> deleteStatements = new Dictionary<String, String>();
         private Dictionary<String, String> selectStatements = new Dictionary<String, String>();
 
+        private Object _readWriteLock = new Object();
+
         public String LogTableName { get; internal set; } = "sys_logs";
         public String SysInfoTableName { get; internal set; } = "sys_info";
 
@@ -304,8 +306,6 @@ namespace Chetch.Database
             var keys = new String[] { "DBServer", dbnameKey, "DBUsername", "DBPassword" };
             return Create<D>(settings, keys);
         }
-
-        private Object _readWriteLock = new Object();
 
         //Constructor
         public DB()
