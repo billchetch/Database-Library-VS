@@ -199,7 +199,11 @@ namespace Chetch.Database
                 DataValue = new Dictionary<String, Object>();
             }
             DataValue[key] = val;
+            SerializeDataValue();
+        }
 
+        public void SerializeDataValue()
+        {
             this["data_value"] = JSON_SERIALIZER.Serialize(DataValue);
         }
     }
@@ -734,6 +738,8 @@ namespace Chetch.Database
                 throw new Exception("Cannot save sysInfo without a data name");
             }
             String filter = "data_name='" + sysInfo.DataName + "'";
+            sysInfo.SerializeDataValue();
+
             if (Count(SysInfoTableName, filter) == 0)
             {
                 Insert(SysInfoTableName, sysInfo);
