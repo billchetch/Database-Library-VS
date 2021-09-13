@@ -163,7 +163,7 @@ namespace Chetch.Database
                 this["data_name"] = value;
             }
         }
-        public Dictionary<String, Object> DataValue { get; internal set; } = null;
+        public Dictionary<String, Object> DataValue { get;  set; } = null;
 
         override public void AddField(String fieldName, Object fieldValue)
         {
