@@ -165,6 +165,14 @@ namespace Chetch.Database
         }
         public Dictionary<String, Object> DataValue { get;  set; } = null;
 
+        public SysInfo() { }
+
+        public SysInfo(String dataName, Dictionary<String, Object> dataValue = null)
+        {
+            DataName = dataName;
+            DataValue = dataValue;
+        }
+
         override public void AddField(String fieldName, Object fieldValue)
         {
             base.AddField(fieldName, fieldValue);
