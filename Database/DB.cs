@@ -96,6 +96,11 @@ namespace Chetch.Database
             return GetValue<double>(fieldName, defaultValue);
         }
 
+        public double GetByte(String fieldName, byte defaultValue = 0)
+        {
+            return GetValue<byte>(fieldName, defaultValue);
+        }
+
         public bool GetAsBool(String fieldName)
         {
             int i =  GetValue<int>(fieldName, 0);
