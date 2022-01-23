@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MySql.Data.MySqlClient;
+using Chetch.Utilities;
 
 namespace Chetch.Database
 {
@@ -98,7 +99,7 @@ namespace Chetch.Database
 
         public byte GetByte(String fieldName, byte defaultValue = 0)
         {
-            return GetValue<byte>(fieldName, defaultValue);
+            return Chetch.Utilities.Convert.ToByte(GetValue(fieldName, defaultValue));
         }
 
         public bool GetAsBool(String fieldName)
