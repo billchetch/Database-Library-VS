@@ -99,7 +99,7 @@ namespace Chetch.Database
 
         public byte GetByte(String fieldName, byte defaultValue = 0)
         {
-            return Chetch.Utilities.Convert.ToByte(GetValue(fieldName, defaultValue));
+            return Chetch.Utilities.Convert.ToByte(GetValue<int>(fieldName, defaultValue));
         }
 
         public bool GetAsBool(String fieldName)
