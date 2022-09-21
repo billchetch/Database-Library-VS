@@ -256,8 +256,8 @@ namespace Chetch.Database
     //main database connection class.
     public class DB : IDisposable
     {
-        const String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
-        const String DATE_FORMAT = "yyyy-MM-dd";
+        public const String DATE_TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+        public const String DATE_FORMAT = "yyyy-MM-dd";
 
         public static String asString(double val)
         {
