@@ -391,6 +391,9 @@ namespace Chetch.Database
             {
                 AddSelectStatement(SysInfoTableName, "*", "data_name='{0}'", null, "1");
             }
+
+            //add some 'system' statements
+            selectStatements.Add("_timezone_offset", "SELECT CONCAT(IF(NOW()>=UTC_TIMESTAMP,'+','-'),TIME_FORMAT(TIMEDIFF(NOW(),UTC_TIMESTAMP),'%H%m')) AS timezone_offset");
         }
 
         public void Dispose(bool disposing)
@@ -421,6 +424,11 @@ namespace Chetch.Database
             connection.Close();
         }
 
+        public String GetTimezoneOffset() 
+        {
+            var r = SelectRow("_timezone_offset", "*");
+            return r.GetString("timezone_offset");
+        }
 
         public String GetStatement(Dictionary<String, String> statements, String statementKey)
         {
