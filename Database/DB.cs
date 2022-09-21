@@ -36,7 +36,7 @@ namespace Chetch.Database
             return GenerateParamString(kv.Key, kv.Value, asLiterals, paramStringFunc);
         }
 
-        virtual protected String GenerateParamString(String key,  Object value, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
+        virtual public String GenerateParamString(String key,  Object value, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
         {
             String r = null;
             if (asLiterals)
