@@ -31,16 +31,27 @@ namespace Chetch.Database
             }
         }
 
-        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
+        virtual public String GenerateParamString(KeyValuePair<String, Object> kv, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
+        {
+            return GenerateParamString(kv.Key, kv.Value, asLiterals, paramStringFunc);
+        }
+
+        virtual protected String GenerateParamString(String key,  Object value, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
         {
             String r = null;
             if (asLiterals)
             {
-                r = paramStringFunc == null ? String.Format("{0}={1}", kv.Key, kv.Value) : paramStringFunc(kv.Key, kv.Value, asLiterals);
-            } else
+                r = paramStringFunc == null ? String.Format("{0}={1}", key, value) : paramStringFunc(key, value, asLiterals);
+            }
+            else
             {
-                String value = paramStringFunc == null ? (kv.Value == null ? null : Utilities.Format.AddSlashes(kv.Value.ToString())) : paramStringFunc(kv.Key, kv.Value, asLiterals);
-                r = String.Format("{0}='{1}'", kv.Key, value);
+                if (paramStringFunc == null) {
+                    String v = value == null ? null : Utilities.Format.AddSlashes(value.ToString());
+                    r = String.Format("{0}='{1}'", key, value);
+                } else
+                {
+                    r = paramStringFunc(key, value, asLiterals);
+                }
             }
             return r;
         }
