@@ -31,26 +31,26 @@ namespace Chetch.Database
             }
         }
 
-        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv, bool asLiterals = false)
+        virtual protected String GenerateParamString(KeyValuePair<String, Object> kv, bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
         {
             String r = null;
             if (asLiterals)
             {
-                r = String.Format("{0}={1}", kv.Key, kv.Value);
+                r = paramStringFunc == null ? String.Format("{0}={1}", kv.Key, kv.Value) : paramStringFunc(kv.Key, kv.Value, asLiterals);
             } else
             {
-                String value = kv.Value == null ? null : Utilities.Format.AddSlashes(kv.Value.ToString());
+                String value = paramStringFunc == null ? (kv.Value == null ? null : Utilities.Format.AddSlashes(kv.Value.ToString())) : paramStringFunc(kv.Key, kv.Value, asLiterals);
                 r = String.Format("{0}='{1}'", kv.Key, value);
             }
             return r;
         }
 
-        virtual public String GenerateParamString(bool asLiterals = false)
+        virtual public String GenerateParamString(bool asLiterals = false, Func<String, Object, bool, String> paramStringFunc = null)
         {
             String s = "";
             foreach (var v in this)
             {
-                s += (s.Length > 0 ? ", " : "") + GenerateParamString(v, asLiterals);
+                s += (s.Length > 0 ? ", " : "") + GenerateParamString(v, asLiterals, paramStringFunc);
             }
             return s;
         }
