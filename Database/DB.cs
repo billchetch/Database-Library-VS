@@ -115,7 +115,14 @@ namespace Chetch.Database
 
         public bool GetAsBool(String fieldName)
         {
-            int i =  GetValue<int>(fieldName, 0);
+            int i = 0;
+            try
+            {
+                i = GetValue<int>(fieldName, 0);
+            } catch(InvalidCastException)
+            {
+                i = System.Convert.ToInt32(GetValue(fieldName));
+            }
             return i > 0;
         }
 
