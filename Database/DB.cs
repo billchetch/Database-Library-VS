@@ -480,7 +480,7 @@ namespace Chetch.Database
             }
 
 
-            MySqlCommand cmd;
+            MySqlCommand cmd = null;
             lock (_readWriteLock)
             {
                 try
