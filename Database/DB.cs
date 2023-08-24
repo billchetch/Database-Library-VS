@@ -494,10 +494,6 @@ namespace Chetch.Database
                     //Execute command
                     cmd.ExecuteNonQuery();
                 }
-                catch
-                {
-                    //this is here so the exception doesn't propogate out but yeah there should be some handling
-                }
                 finally
                 {
                     CloseConnection();
@@ -697,10 +693,6 @@ namespace Chetch.Database
 
                     //close Data Reader
                     dataReader.Close();
-                }
-                catch
-                {
-                    //again not sure what to do here
                 }
                 finally
                 {
