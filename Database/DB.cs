@@ -46,8 +46,14 @@ namespace Chetch.Database
             else
             {
                 if (paramStringFunc == null) {
-                    String v = value == null ? null : Utilities.Format.AddSlashes(value.ToString());
-                    r = String.Format("{0}='{1}'", key, value);
+                    String v = null;
+                    if (value is DateTime)
+                    {
+                        v = DB.asString((DateTime)value, DB.DATE_TIME_FORMAT);
+                    } else {
+                        v = value == null ? null : Utilities.Format.AddSlashes(value.ToString());
+                    }
+                    r = String.Format("{0}='{1}'", key, v);
                 } else
                 {
                     r = paramStringFunc(key, value, asLiterals);
